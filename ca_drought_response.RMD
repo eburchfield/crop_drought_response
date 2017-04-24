@@ -1,0 +1,45 @@
+---
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## CDFA Annual Reports
+
+Data presented below found in reports listed [here](https://www.cdfa.ca.gov/Statistics/).
+
+The TOTAL VALUE variable is based on the value of quantity harvetsed for crops and the value of quantity marketed for livestock. Value for "Livestock" and "Dairy" come from a different table, where TOTAL VALUE refers to the gross value of commodities and services produced within a year.  The variables AREA HARVESTED and CA SHARE were not available for "Livestock" and "Dairy," though CA is consistently one of the top producers in these sectors.
+
+"Dairy" includes "milk and cream."  "Alfalfa" includes "Hay, alfalfa and other."  "Cattle" includes all "meat animals."  Values for "Tomatoes" include "Tomatoes, fresh market" and "Tomatoes, processing."  Tomatoe shares of CA production in US market are for "Tomatoes, processing" since the aggregate "Tomatoes" category was not available.  "Lettuce" includes "Lettuce, Romaine," "Lettuce, Head," and "Lettuce, Leaf."  Shares of CA production in US market for "Lettuce" is for "Lettuce, Leaf" as aggregate data was not available. 
+
+```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+library(tidyverse)
+library(readxl)
+
+setwd('C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\')
+
+# dataset without Cattle and Dairy categories
+df <- read_excel('cdfa_annual_reports.xlsx', sheet="All")
+df$Share <- as.numeric(df$Share)
+# dataset with Cattle and Dairy categories
+dfl <- as.data.frame(read_excel('cdfa_annual_reports.xlsx', sheet="All_livestock"))
+dfl$Share <- as.numeric(dfl$Share)
+
+ggplot(data=df, mapping=aes(x=Year, y=Acreage)) +
+  geom_point(mapping=aes(color=Crop)) +
+  geom_smooth(mapping=aes(group=Crop, color=Crop)) +
+  scale_x_continuous(breaks=seq(2004,2015,1)) + ggtitle('Area harvested (1,000 acres)')
+
+ggplot(data=df, mapping=aes(x=Year, y=Share)) +
+  geom_point(mapping=aes(color=Crop)) +
+  geom_smooth(mapping=aes(group=Crop, color=Crop), na.rm=T) +
+  scale_x_continuous(breaks=seq(2004,2015,1)) + ggtitle('CA share of US production')
+
+ggplot(data=dfl, mapping=aes(x=Year, y=Value)) +
+  geom_point(mapping=aes(color=Crop)) +
+  geom_smooth(mapping=aes(group=Crop, color=Crop)) +
+  scale_x_continuous(breaks=seq(2004,2015,1)) + ggtitle('Total value ($1,000)')
+
+
+```
