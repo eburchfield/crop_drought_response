@@ -16,33 +16,12 @@ df <- filter(df, !grepl("Total", County))
 df <- filter(df, !grepl("Sum of", County))
 df <- filter(df, !grepl("  ", County))
 
-####################### YOU ARE HERE ############################
-# duplicate county names, group by County.Code
-cty.name <- df %>% group_by(County.Code) %>% filter(n() > 1) %>% summarize(n=n())
-  
-  
-  select(Year, County, County.Code) %>%
-  group_by(County.Code) %>% 
-  summarize(County.Name = list(paste0(County, collapse = ","))) %>%
-  mutate(N.County = length(unique(County.Name)))
-
-
-
-# different observations for counties (some 2013-2015, some longer, etc.)
-
-
-
-
-
-
-
-
-
 # df notes: 
 ## Some trailing spaces after Crop.Name
 ## Yield (tons per acre)
 ## Production (tons)
 ## Price.P.U and (total) Value (USD)
+## Use County.Code rather than County as County ID
 
 # refine crop categories: alfalfa, almonds, grapes, lettuce, pistachios, rice, strawberries, tomatoes, walnuts
 
@@ -60,22 +39,153 @@ tomatoes_cname <- tomatoes_cname[!grepl("GREENHOUSE", tomatoes_cname)] #drop gre
 walnut_cname <- grep("WALNUT", cn, value=T)
 
 
-# create county-year-yield panels for each crop of interest
-## Yield.Avg = aggregate average yield across land use categories listed in cname objects
+# OUTLIER CHECK
 
-walnut <- df %>% filter(Crop.Name %in% walnut_cname) %>% group_by(County.Code, Year) %>% 
-  summarize(Yield.Avg = mean(Yield, na.rm=T), County.Name = paste0(County, collapse=" "))
+df$Index <- seq(1, nrow(df))
 
-w <- walnut %>% filter(County == "San Joaquin")
-ggplot(data=w, mapping=aes(x=Year, y=Yield.Avg)) +
-  geom_point(mapping=aes(color=County)) +
-  geom_smooth(mapping=aes(group=County, color=County)) +
-  scale_x_continuous(breaks=seq(1980,2015,1)) + ggtitle('Average county yield (tons/acre) - WALNUTS')
+# visual inspection for each crop using this plot:
+df %>% filter(Crop.Name %in% rice_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - RICE')
+
+#ALFALFA: crazy value over 800 (n=1)
+idx1 <- df %>% filter(Crop.Name %in% alfalfa_cname, Yield > 100) %>% select(Index)
+
+#ALMONDS: crazy value (n=1)
+idx2 <- df %>% filter(Crop.Name %in% almonds_cname, Yield > 100) %>% select(Index)
+
+#GRAPES: drop values over 25 (n=1)
+idx3 <- df %>% filter(Crop.Name %in% grapes_cname, Yield > 25) %>% select(Index)
+
+#LETTUCE: drop values over 50 (n=2)
+idx4 <- df %>% filter(Crop.Name %in% lettuce_cname, Yield > 50) %>% select(Index)
+
+#STRAWBERRIES: drop values over 100 (n=1)
+idx5 <- df %>% filter(Crop.Name %in% strawberries_cname, Yield > 50) %>% select(Index)
+
+#TOMATOES: drop values over 100 (n=4)
+idx6 <- df %>% filter(Crop.Name %in% tomatoes_cname, Yield > 100) %>% select(Index)
+
+#WALNUTS: drop over 5 (n=3)
+idx7 <- df %>% filter(Crop.Name %in% walnut_cname, Yield > 5) %>% select(Index)
+
+#NA outlier rows
+idx <- as.data.frame(unlist(c(idx1, idx2, idx3, idx4, idx5, idx6, idx7)))
+df <- df[!(df$Index %in% idx$`unlist(c(idx1, idx2, idx3, idx4, idx5, idx6, idx7))`),]
+remove(idx1, idx2, idx3, idx4, idx5, idx6, idx, idx7)
+
+
+
+# test for differences in variations in crop name
+
+df %>% filter(Crop.Name %in% alfalfa_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Alfalfa')
+#drop seed and sprount
+
+df %>% filter(Crop.Name %in% almonds_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Almonds')
+#drop hulls b/c no observations
+
+df %>% filter(Crop.Name %in% lettuce_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Lettuce')
+#group multiple types of lettuce 
+
+df %>% filter(Crop.Name %in% tomatoes_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Tomatoes')
+#focus on processing tomatoes only, yield seems pretty different for processing v. FRESH AMRKET, CHERRY, and UNSPECIFIED
+
+df %>% filter(Crop.Name %in% pistachio_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Pistachios')
+
+df %>% filter(Crop.Name %in% walnut_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Walnuts')
+#hardly any BLACK observations, so drop
+
+df %>% filter(Crop.Name %in% strawberries_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Strawberries')
+#lots of variability, but no clear reason to ungroup
+
+#RICE - rice plot shows two distinct yield levels, replot removing "RICE SEED"
+#rice_cname <- rice_cname[!grepl("SEED", rice_cname)]#remove rice seed
+df %>% filter(Crop.Name %in% rice_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Rice')
+#remove wild rice, much lower yields
+
+df %>% filter(Crop.Name %in% grapes_cname) %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point(mapping=aes(color=Crop.Name)) +
+  geom_smooth(method="loess", mapping=aes(group=Commodity.Code, color=Crop.Name)) +
+  ggtitle('Average yield (tons/acre) - Wine grapes')
+#keep all grapes
+
+
+# UPDATED CNAME
+
+alfalfa_cname <- grep("ALF", cn, value=T)
+alfalfa_cname <- alfalfa_cname[!grepl("SEED", alfalfa_cname)] #remove SEED ALFALFA
+alfalfa_cname <- alfalfa_cname[!grepl("SPROUT", alfalfa_cname)] #remove SPROUT ALFALFA
+
+almonds_cname <- grep("ALMOND", cn, value=T)
+almonds_cname <- almonds_cname[!grepl("HULLS", almonds_cname)] #remove SPROUT ALFALFA
+
+grapes_cname <- grep("GRAPES", cn, value=T) #adding S drops GRAPEFRUIT
+
+lettuce_cname <- grep("LETTUCE", cn, value=T)
+
+pistachio_cname <- grep("PISTACH", cn, value=T)
+
+rice_cname <- grep("RICE MILLING", cn, value=T)
+
+strawberries_cname <- grep("STRAWB", cn, value=T) 
+strawberries_cname <- strawberries_cname[!grepl("NURSERY", strawberries_cname)] #remove berries grown in nursery
+
+tomatoes_cname <- grep("TOMATOES PROC", cn, value=T) 
+
+walnut_cname <- grep("WALNUTS ENGLISH", cn, value=T)
+
+# update crop names
+df$Crop.Name[df$Crop.Name %in% alfalfa_cname] <- "Alfalfa"
+df$Crop.Name[df$Crop.Name %in% almonds_cname] <- "Almonds"
+df$Crop.Name[df$Crop.Name %in% grapes_cname] <- "Grapes"
+df$Crop.Name[df$Crop.Name %in% lettuce_cname] <- "Lettuce"
+df$Crop.Name[df$Crop.Name %in% pistachio_cname] <- "Pistachios"
+df$Crop.Name[df$Crop.Name %in% rice_cname] <- "Rice"
+df$Crop.Name[df$Crop.Name %in% strawberries_cname] <- "Strawberries"
+df$Crop.Name[df$Crop.Name %in% tomatoes_cname] <- "Tomatoes"
+df$Crop.Name[df$Crop.Name %in% walnut_cname] <- "Walnuts"
+
+#saveRDS(df, "C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
 
 
 
 ######################################################################################################################
-# ARCHIVE
+# ARCHIVE, initial dataset construction
 ######################################################################################################################
 
 ### DATASET CONSTRUCTION ###

@@ -7,6 +7,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## CDFA Annual Reports
 
+### State-level data
+
 Data presented below found in reports listed [here](https://www.cdfa.ca.gov/Statistics/).
 
 The TOTAL VALUE variable is based on the value of quantity harvetsed for crops and the value of quantity marketed for livestock. Value for "Livestock" and "Dairy" come from a different table, where TOTAL VALUE refers to the gross value of commodities and services produced within a year.  The variables AREA HARVESTED and CA SHARE were not available for "Livestock" and "Dairy," though CA is consistently one of the top producers in these sectors.
@@ -41,5 +43,205 @@ ggplot(data=dfl, mapping=aes(x=Year, y=Value)) +
   geom_smooth(mapping=aes(group=Crop, color=Crop)) +
   scale_x_continuous(breaks=seq(2004,2015,1)) + ggtitle('Total value ($1,000)')
 
+
+```
+
+### County-level data
+
+County-annual datasets were found [here](https://www.nass.usda.gov/Statistics_by_State/California/Publications/AgComm/Detail/).  Average yields for the state of CA through time for each crop are plotted below.  Note some extreme outliers, which are likely from data errors since it is fairly unreasonable to expect yields to vary that significantly across counties.  In these plots, dots are counties (n=58) and the line is the Loess curve fit to the points with rows containing NAs removed from the analysis.  Multiple naming conventions were used for each crop in the original NASS data (due to changes in coding system through time).  To see aggregation of variables, see nass.R. This script also documents removal of outliers.
+
+#### County-level yield
+
+```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+
+library(tidyverse)
+library(stringr)
+
+df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+
+# Plot average yield through time for each crop of interest
+
+df %>% filter(Crop.Name == "Alfalfa") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - ALFALFA')
+
+df %>% filter(Crop.Name == "Almonds") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - ALMONDS')
+
+df %>% filter(Crop.Name == "Grapes") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - GRAPES')
+
+df %>% filter(Crop.Name == "Lettuce") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - LETTUCE')
+
+df %>% filter(Crop.Name == "Pistachios") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - PISTACHIO')
+
+df %>% filter(Crop.Name == "Strawberries") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - STRAWBERRIES')
+
+df %>% filter(Crop.Name == "Tomatoes") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - TOMATOES')
+
+df %>% filter(Crop.Name == "Rice") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Yield)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Average yield (tons/acre) - RICE')
+
+```
+
+### County-level acreage
+
+```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+
+library(tidyverse)
+library(stringr)
+
+df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+
+# Plot average yield through time for each crop of interest
+
+df %>% filter(Crop.Name == "Alfalfa") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - ALFALFA')
+
+df %>% filter(Crop.Name == "Almonds") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - ALMONDS')
+
+df %>% filter(Crop.Name == "Grapes") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - GRAPES')
+
+df %>% filter(Crop.Name == "Lettuce") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - LETTUCE')
+
+df %>% filter(Crop.Name == "Pistachios") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - PISTACHIO')
+
+df %>% filter(Crop.Name == "Rice") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - RICE')
+
+df %>% filter(Crop.Name == "Strawberries") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - STRAWBERRIES')
+
+df %>% filter(Crop.Name == "Tomatoes") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - TOMATOES')
+
+df %>% filter(Crop.Name == "Rice") %>% group_by(Year) %>% 
+  ggplot(., mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_point() +
+  geom_smooth(method="loess") +
+  ggtitle('Harvested Acres - RICE')
+
+
+```
+
+Note that for several crops (almonds, pistachios), there are strong paths in the data.  These are counties with exceptionally high acreage through time.
+
+Here's a summary plot of all counties:
+
+```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+
+library(tidyverse)
+library(stringr)
+
+df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- df[df$Crop.Name %in% c("Almonds", "Alfalfa", "Grapes", "Lettuce", "Tomatoes", "Pistachios", "Walnuts", "Strawberries", "Rice"),]
+
+ggplot(data=df, mapping=aes(x=Year, y=Harvested.Acres)) +
+  geom_smooth(mapping=aes(group=Crop.Name, color=Crop.Name)) +
+  ggtitle('Harvested Acreage')
+
+```
+
+### County-level production (Tons)
+
+```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+
+library(tidyverse)
+library(stringr)
+
+df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- df[df$Crop.Name %in% c("Almonds", "Alfalfa", "Grapes", "Lettuce", "Tomatoes", "Pistachios", "Walnuts", "Strawberries", "Rice"),]
+
+ggplot(data=df, mapping=aes(x=Year, y=Production)) +
+  geom_smooth(mapping=aes(group=Crop.Name, color=Crop.Name)) +
+  ggtitle('Production (tons)')
+
+```
+
+
+### County-level net value (USD)
+
+```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+
+library(tidyverse)
+library(stringr)
+
+df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- df[df$Crop.Name %in% c("Almonds", "Alfalfa", "Grapes", "Lettuce", "Tomatoes", "Pistachios", "Walnuts", "Strawberries", "Rice"),]
+
+ggplot(data=df, mapping=aes(x=Year, y=Value)) +
+  geom_smooth(mapping=aes(group=Crop.Name, color=Crop.Name)) +
+  ggtitle('Value (USD)')
+
+```
+
+### County-level price-per unit (USD)
+
+```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+
+library(tidyverse)
+library(stringr)
+
+df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- df[df$Crop.Name %in% c("Almonds", "Alfalfa", "Grapes", "Lettuce", "Tomatoes", "Pistachios", "Walnuts", "Strawberries", "Rice"),]
+
+ggplot(data=df, mapping=aes(x=Year, y=Price.P.U)) +
+  geom_smooth(mapping=aes(group=Crop.Name, color=Crop.Name)) +
+  ggtitle('Price per Unit (USD)')
 
 ```
