@@ -3,13 +3,14 @@
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "./data")
 ```
 
 ## CDFA Annual Reports
 
 ### State-level data
 
-Data presented below found in reports listed [here](https://www.cdfa.ca.gov/Statistics/).
+Data presented below found in reports listed [here](https://www.cdfa.ca.gov/Statistics/).  I've done some additional processing to the dataset, which is documented in the `nass.R` script in this repository.  I focus on a subset of crops below, which I've selected based on a number of metrics including the commodity rank in contribution to GDP, whether or not CA is the top national producer, US production rank, CA as the only producer natinoally, net water use, and jobs per acre foot of water used.^[Documented in the top_crop_selection spreadsheet.]
 
 The TOTAL VALUE variable is based on the value of quantity harvetsed for crops and the value of quantity marketed for livestock. Value for "Livestock" and "Dairy" come from a different table, where TOTAL VALUE refers to the gross value of commodities and services produced within a year.  The variables AREA HARVESTED and CA SHARE were not available for "Livestock" and "Dairy," though CA is consistently one of the top producers in these sectors.
 
@@ -18,8 +19,6 @@ The TOTAL VALUE variable is based on the value of quantity harvetsed for crops a
 ```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
 library(tidyverse)
 library(readxl)
-
-setwd('C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\')
 
 # dataset without Cattle and Dairy categories
 df <- read_excel('cdfa_annual_reports.xlsx', sheet="All")
@@ -52,12 +51,12 @@ County-annual datasets were found [here](https://www.nass.usda.gov/Statistics_by
 
 #### County-level yield
 
-```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+```{r echo=F, message=F, warning=F, cache=T, fig.width=7, fig.height=7, fig.align="center"}
 
 library(tidyverse)
 library(stringr)
 
-df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- readRDS("cdfa_county_annual_reports.RDS")
 
 # Plot average yield through time for each crop of interest
 
@@ -113,12 +112,12 @@ df %>% filter(Crop.Name == "Rice") %>% group_by(Year) %>%
 
 ### County-level acreage
 
-```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
+```{r echo=F, message=F, warning=F, cache=T, fig.width=7, fig.height=7, fig.align="center"}
 
 library(tidyverse)
 library(stringr)
 
-df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- readRDS("cdfa_county_annual_reports.RDS")
 
 # Plot average yield through time for each crop of interest
 
@@ -188,7 +187,7 @@ Here's a summary plot of all counties:
 library(tidyverse)
 library(stringr)
 
-df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- readRDS("cdfa_county_annual_reports.RDS")
 df <- df[df$Crop.Name %in% c("Almonds", "Alfalfa", "Grapes", "Lettuce", "Tomatoes", "Pistachios", "Walnuts", "Strawberries", "Rice"),]
 
 ggplot(data=df, mapping=aes(x=Year, y=Harvested.Acres)) +
@@ -204,7 +203,7 @@ ggplot(data=df, mapping=aes(x=Year, y=Harvested.Acres)) +
 library(tidyverse)
 library(stringr)
 
-df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- readRDS("cdfa_county_annual_reports.RDS")
 df <- df[df$Crop.Name %in% c("Almonds", "Alfalfa", "Grapes", "Lettuce", "Tomatoes", "Pistachios", "Walnuts", "Strawberries", "Rice"),]
 
 ggplot(data=df, mapping=aes(x=Year, y=Production)) +
@@ -221,7 +220,7 @@ ggplot(data=df, mapping=aes(x=Year, y=Production)) +
 library(tidyverse)
 library(stringr)
 
-df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- readRDS("cdfa_county_annual_reports.RDS")
 df <- df[df$Crop.Name %in% c("Almonds", "Alfalfa", "Grapes", "Lettuce", "Tomatoes", "Pistachios", "Walnuts", "Strawberries", "Rice"),]
 
 ggplot(data=df, mapping=aes(x=Year, y=Value)) +
@@ -233,11 +232,10 @@ ggplot(data=df, mapping=aes(x=Year, y=Value)) +
 ### County-level price-per unit (USD)
 
 ```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.align="center"}
-
 library(tidyverse)
 library(stringr)
 
-df <- readRDS("C:\\Users\\Emily\\Box Sync\\WF\\CA drought response\\data\\cdfa_county_annual_reports.RDS")
+df <- readRDS("cdfa_county_annual_reports.RDS")
 df <- df[df$Crop.Name %in% c("Almonds", "Alfalfa", "Grapes", "Lettuce", "Tomatoes", "Pistachios", "Walnuts", "Strawberries", "Rice"),]
 
 ggplot(data=df, mapping=aes(x=Year, y=Price.P.U)) +
@@ -245,3 +243,179 @@ ggplot(data=df, mapping=aes(x=Year, y=Price.P.U)) +
   ggtitle('Price per Unit (USD)')
 
 ```
+
+## Exploring spatial variation in yields
+
+```{r echo=F, message=F, warning=F, fig.width=7, fig.height=7, fig.show="hold", fig.align="center"}
+df <- readRDS("cdfa_county_annual_reports.RDS")
+
+hs <- hist(df$Yield[df$Crop.Name == "Almonds"], 50, main = "Almond yield", xlab = "Yield (tons/acre)")
+bw <- df %>% group_by(County) %>%
+  filter(Crop.Name == "Almonds") %>%
+  ggplot(., aes(County, Yield)) + 
+  geom_boxplot() +
+  ylab("Yield (tons/acre)") +
+  theme(axis.text.x = element_text(angle = 90, hjust=1)) +
+  ggtitle("County-level variation in Almond yields")
+plot(bw)
+
+hs <- hist(df$Yield[df$Crop.Name == "Grapes"], 50, main = "Grape yield", xlab = "Yield (tons/acre)")
+bw <- df %>% group_by(County) %>%
+  filter(Crop.Name == "Grapes") %>%
+  ggplot(., aes(County, Yield)) + 
+  geom_boxplot() +
+  ylab("Yield (tons/acre)") +
+  theme(axis.text.x = element_text(angle = 90, hjust=1)) +
+  ggtitle("County-level variation in Grapes yields")
+plot(bw)
+
+hs <- hist(df$Yield[df$Crop.Name == "Alfalfa"], 50, main = "Alfalfa yield", xlab = "Yield (tons/acre)")
+bw <- df %>% group_by(County) %>%
+  filter(Crop.Name == "Alfalfa") %>%
+  ggplot(., aes(County, Yield)) + 
+  geom_boxplot() +
+  ylab("Yield (tons/acre)") +
+  theme(axis.text.x = element_text(angle = 90, hjust=1)) +
+  ggtitle("County-level variation in Alfalfa yields")
+plot(bw)
+
+hs <- hist(df$Yield[df$Crop.Name == "Rice"], 50, main = "Rice yield", xlab = "Yield (tons/acre)")
+bw <- df %>% group_by(County) %>%
+  filter(Crop.Name == "Rice") %>%
+  ggplot(., aes(County, Yield)) + 
+  geom_boxplot() +
+  ylab("Yield (tons/acre)") +
+  theme(axis.text.x = element_text(angle = 90, hjust=1)) +
+  ggtitle("County-level variation in Rice yields")
+plot(bw)
+
+```
+
+### County-level yield variation
+Look at [this website](http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS3_MakingMaps_part1_mappingVectorData.html#spplot) for plotting tips.
+```{r echo=F, message=F, warning=F, cache=T, fig.width=4, fig.height=4, fig.show="hold", fig.align="center"}
+library(raster)
+library(RColorBrewer)
+
+county <- shapefile("CA_counties.shp")
+county_avg <- function(crop_name){
+  df %>% group_by(County) %>%
+    filter(Crop.Name == crop_name) %>%
+    summarize(avg_yield = mean(Yield), sd_yield = sd(Yield), avg_acres = mean(Harvested.Acres), sd_acres = sd(Harvested.Acres)) 
+}
+
+#display.brewer.all()
+my.palette <- brewer.pal(n = 9, name = "Greens")
+
+crop_name <- "Almonds"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_yield", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Almond yield (tons/acre)"), xlab = "", ylab ="")
+#make cuts n - 1
+
+crop_name <- "Grapes"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_yield", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Grape yield (tons/acre)"), xlab = "", ylab ="")
+
+crop_name <- "Alfalfa"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_yield", col.regions = my.palette, cuts = 8, col = "gray", main = paste(crop_name, "yield (tons/acre)"), xlab = "", ylab ="")
+
+crop_name <- "Pistachios"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_yield", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Pistachio yield (tons/acre)"), xlab = "", ylab ="")
+
+crop_name <- "Walnuts"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County")
+spplot(yield_shp, "avg_yield", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Walnut yields (tons/acre)"), xlab = "", ylab ="")
+
+crop_name <- "Tomatoes"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_yield", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Tomato yields (tons/acre)"), xlab = "", ylab ="")
+
+crop_name <- "Strawberries"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_yield", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Strawberry yields (tons/acre)"), xlab = "", ylab ="")
+```
+
+### County-level harvested acreage variation
+
+```{r echo=F, message=F, warning=F, cache=T, fig.width=4, fig.height=4, fig.show="hold", fig.align="center"}
+library(raster)
+library(RColorBrewer)
+
+county <- shapefile("CA_counties.shp")
+county_avg <- function(crop_name){
+  df %>% group_by(County) %>%
+    filter(Crop.Name == crop_name) %>%
+    summarize(avg_yield = mean(Yield), sd_yield = sd(Yield), avg_acres = mean(Harvested.Acres), sd_acres = sd(Harvested.Acres)) 
+}
+
+my.palette <- brewer.pal(n = 9, name = "OrRd")
+
+crop_name <- "Almonds"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_acres", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Harvested acres",crop_name), xlab = "", ylab ="")
+
+crop_name <- "Grapes"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_acres", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Harvested acres",crop_name), xlab = "", ylab ="")
+
+crop_name <- "Alfalfa"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_acres", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Harvested acres",crop_name), xlab = "", ylab ="")
+
+crop_name <- "Pistachios"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_acres", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Harvested acres",crop_name), xlab = "", ylab ="")
+
+crop_name <- "Walnuts"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_acres", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Harvested acres",crop_name), xlab = "", ylab ="")
+
+crop_name <- "Tomatoes"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_acres", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Harvested acres",crop_name), xlab = "", ylab ="")
+
+crop_name <- "Strawberries"
+county_data <- county_avg(crop_name)
+yield_shp <- merge(county, county_data, by.x = "NAME", by.y = "County") 
+spplot(yield_shp, "avg_acres", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Harvested acres",crop_name), xlab = "", ylab ="")
+```
+
+
+## Notes and limitations
+
+### From Matt Yost, Agricultural Extension Expert, Utah State University
+
+The consistency in the quality of the NASS survey data from county to county. How accurately did the growers in each county measure and report their yield? Also, was the proportion of good vs. not so good management by growers equivalent from county to county.. or did the same growers report their yield from year to year.
+ 
+Many growers don’t measure yield very well. Yield monitoring is perhaps best with grain crops or anything else harvested with a combine because most new combines come equipped with yield monitors. However, these monitors have to be constantly calibrated to really produce accurate yield information. The old way is to measure mass/area of some of the crop coming off the field. Many farmers will do this if they are selling the crop. If it is used for feed on their own farm, then they often will not. Thus, the difference if producers selling/keeping crops within and among counties could cause difference.
+ 
+Another factor is the environment differences within and among counties. For example, more growers with poor ground could have been surveyed in one county vs. more growers with good ground in a neighboring county.
+ 
+Many farmers will have land in multiple counties. When they fill out their survey from NASS, I’m not sure how they report their information. If they are surveyed based on where they live or where the majority of their fields are. I’m sure that NASS probably handles this, but I’m not cognizant of their procedures.
+ 
+So, in summary, I think a lot of it is probably not real, but rather an artifact of the fact that only relatively small portions of the land have reliable yield data. I usually don’t put a lot of stock in county-level yield estimates for the reasons stated above – maybe I’m too much of a critic. You might talk with someone at NASS to learn more about how they collect and analyze their data.  
+ 
+Some of it may be real (there can be large variation in a single field), but it’s really hard to know. You could take the CDL and add SSURGO soil data to identify which types of soil the crop was grown on in each county and then determine whether soil productivity differences were a factor.
+ 
+Attached are some references that I thought of or found. I don’t think they really address what you are after though – casual factors of yield variation. I’ll pass on anything else if I think of it.
+ 
+-Matt
+
+## Space-time patterns
+
+Plotting change in yield spatially over the course of the drought (2008 - 2015) to come!
