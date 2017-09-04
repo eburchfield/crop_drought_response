@@ -419,3 +419,132 @@ Attached are some references that I thought of or found. I don’t think they re
 ## Space-time patterns
 
 Plotting change in yield spatially over the course of the drought (2008 - 2015) to come!
+
+```{r}
+crop <- "Almonds"
+
+# regression lines
+df %>% filter(Crop.Name == crop, Year > 2007) %>%
+  ggplot(., aes(y = Yield, x = Year, color = County, shape = County)) +
+  geom_point() +
+  geom_smooth(method = "lm", fill = NA) 
+
+# single county
+#county <- "Butte"
+#df %>% filter(Crop.Name == crop, County == county, Year > 2007) %>%
+ # ggplot(., aes(x = Year, y = Yield)) +
+  #geom_point() +
+  #geom_smooth(method = "lm", fill = NA)
+```
+
+```{r echo=F}
+library(raster)
+library(RColorBrewer)
+
+county <- shapefile("CA_counties.shp")
+
+crop <- "Almonds"
+# spatial plot of temporal trends
+avg_yield <- df %>% filter(Crop.Name == crop, Year > 2007) %>%
+  group_by(County) %>%
+  do(mod = lm(Yield ~ Year, data = .)) %>%
+  mutate(slope = summary(mod)$coeff[2], p = summary(mod)$coeff[4]) 
+avg_yield <- avg_yield[,c(1,3,4)]  #unsure why select won't work here?
+avg_yield_shp <- merge(county, avg_yield, by.x = "NAME", by.y = "County", all.x = T)
+
+my.palette <- brewer.pal(n = 9, name = "PuOr")
+spplot(avg_yield_shp, "slope", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Yield trend, 2007 to 2015: ",crop), xlab = "", ylab ="")
+
+crop <- "Alfalfa"
+# spatial plot of temporal trends
+avg_yield <- df %>% filter(Crop.Name == crop, Year > 2007) %>%
+  group_by(County) %>%
+  do(mod = lm(Yield ~ Year, data = .)) %>%
+  mutate(slope = summary(mod)$coeff[2], p = summary(mod)$coeff[4]) 
+avg_yield <- avg_yield[,c(1,3,4)]  #unsure why select won't work here?
+avg_yield_shp <- merge(county, avg_yield, by.x = "NAME", by.y = "County", all.x = T)
+
+my.palette <- brewer.pal(n = 9, name = "PuOr")
+spplot(avg_yield_shp, "slope", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Yield trend, 2007 to 2015: ",crop), xlab = "", ylab ="")
+
+crop <- "Tomatoes"
+# spatial plot of temporal trends
+avg_yield <- df %>% filter(Crop.Name == crop, Year > 2007) %>%
+  group_by(County) %>%
+  do(mod = lm(Yield ~ Year, data = .)) %>%
+  mutate(slope = summary(mod)$coeff[2], p = summary(mod)$coeff[4]) 
+avg_yield <- avg_yield[,c(1,3,4)]  #unsure why select won't work here?
+avg_yield_shp <- merge(county, avg_yield, by.x = "NAME", by.y = "County", all.x = T)
+
+my.palette <- brewer.pal(n = 9, name = "PuOr")
+spplot(avg_yield_shp, "slope", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Yield trend, 2007 to 2015: ",crop), xlab = "", ylab ="")
+
+crop <- "Walnuts"
+# spatial plot of temporal trends
+avg_yield <- df %>% filter(Crop.Name == crop, Year > 2007) %>%
+  group_by(County) %>%
+  do(mod = lm(Yield ~ Year, data = .)) %>%
+  mutate(slope = summary(mod)$coeff[2], p = summary(mod)$coeff[4]) 
+avg_yield <- avg_yield[,c(1,3,4)]  #unsure why select won't work here?
+avg_yield_shp <- merge(county, avg_yield, by.x = "NAME", by.y = "County", all.x = T)
+
+my.palette <- brewer.pal(n = 9, name = "PuOr")
+spplot(avg_yield_shp, "slope", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Yield trend, 2007 to 2015: ",crop), xlab = "", ylab ="")
+
+# crop <- "Grapes"
+# # spatial plot of temporal trends
+# avg_yield <- df %>% filter(Crop.Name == crop, Year > 2007) %>%
+#   group_by(County) %>%
+#   #filter(is.na(Yield) < n()/2) %>%
+#   do(mod = lm(Yield ~ Year, data = ., na.action = na.omit)) %>%
+#   mutate(slope = summary(mod)$coeff[2], p = summary(mod)$coeff[4]) 
+# avg_yield <- avg_yield[,c(1,3,4)]  #unsure why select won't work here?
+# avg_yield_shp <- merge(county, avg_yield, by.x = "NAME", by.y = "County", all.x = T)
+# 
+# my.palette <- brewer.pal(n = 9, name = "PuOr")
+# spplot(avg_yield_shp, "slope", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Yield trend, 2007 to 2015: ",crop), xlab = "", ylab ="")
+
+# Grapes throws error, too many NAs
+
+crop <- "Rice"
+# spatial plot of temporal trends
+avg_yield <- df %>% filter(Crop.Name == crop, Year > 2007) %>%
+  group_by(County) %>%
+  do(mod = lm(Yield ~ Year, data = .)) %>%
+  mutate(slope = summary(mod)$coeff[2], p = summary(mod)$coeff[4]) 
+avg_yield <- avg_yield[,c(1,3,4)]  #unsure why select won't work here?
+avg_yield_shp <- merge(county, avg_yield, by.x = "NAME", by.y = "County", all.x = T)
+
+my.palette <- brewer.pal(n = 9, name = "PuOr")
+spplot(avg_yield_shp, "slope", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Yield trend, 2007 to 2015: ",crop), xlab = "", ylab ="")
+
+# crop <- "Strawberries"
+# # spatial plot of temporal trends
+# avg_yield <- df %>% filter(Crop.Name == crop, Year > 2007) %>%
+#   group_by(County) %>%
+#   do(mod = lm(Yield ~ Year, data = .)) %>%
+#   mutate(slope = summary(mod)$coeff[2], p = summary(mod)$coeff[4]) 
+# avg_yield <- avg_yield[,c(1,3,4)]  #unsure why select won't work here?
+# avg_yield_shp <- merge(county, avg_yield, by.x = "NAME", by.y = "County", all.x = T)
+# 
+# my.palette <- brewer.pal(n = 9, name = "PuOr")
+# spplot(avg_yield_shp, "slope", col.regions = my.palette, cuts = 8, col = "gray", main = paste("Yield trend, 2007 to 2015: ",crop), xlab = "", ylab ="")
+```
+
+
+## PCA
+
+```{r}
+library(stats)
+#https://www.r-bloggers.com/computing-and-visualizing-pca-in-r/
+#http://www.math.canterbury.ac.nz/~r.vale/PCA.pdf
+#http://adegenet.r-forge.r-project.org/files/tutorial-spca.pdf
+#http://www.tandfonline.com/doi/full/10.1080/00045608.2012.689236?scroll=top&needAccess=true
+# check Bivand text
+
+# read spatial PCA article
+
+ly <- df %>% filter(Crop.Name == "Almonds") %>% mutate(ly = log(Yield))
+
+
+```
